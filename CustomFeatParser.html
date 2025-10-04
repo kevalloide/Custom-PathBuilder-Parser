@@ -71,16 +71,47 @@
             background-color: #0056b3;
         }
 
-        .table-progress{
+        .table-progress {
             border: 1px solid;
             width: 100%;
             padding: 5px;
-            .table-element{
+
+            .table-element {
                 border-bottom: 1px solid;
                 padding: 5px;
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "title remove"
+                    "lvl    lvl "
+                    "action action"
+                    "traits traits"
+                    "desc   desc"
+                ;
 
-                .title{
+                .title {
                     font-weight: 700;
+                }
+
+                .lvl {
+                    grid-area: lvl;
+                }
+
+                .action {
+                    grid-area: action;
+                }
+
+                .traits {
+                    grid-area: traits;
+                }
+
+                .desc {
+                    grid-area: desc;
+                }
+
+                .remove {
+                    cursor: pointer;
+                    grid-area: remove;
                 }
             }
         }
@@ -96,13 +127,11 @@
             <legend>Custom Pack</legend>
             <label for="customPackID">Custom Pack ID</label>
             <input type="text" id="customPackID" name="customPackID"
-                placeholder="Id of the pack, mandatory. Can be any alfanumerical combination of characters."
-                required>
+                placeholder="Id of the pack, mandatory. Can be any alfanumerical combination of characters." required>
 
             <label for="customPackName">Custom Pack Name</label>
             <input type="text" id="customPackName" name="customPackName"
-                placeholder="Name of the pack, displayed when imported."
-                required>
+                placeholder="Name of the pack, displayed when imported." required>
         </fieldset>
         <div id="pack-status"></div>
         <button type="submit">Create Pack</button>
@@ -115,10 +144,11 @@
             <legend>Custom Feat</legend>
 
             <label for="feat-id">Feat ID</label>
-            <input type="text" id="feat-id" name="feat-id" disabled value="feat-1">
+            <input type="text" id="feat-id" name="feat-id" disabled value="feat-1" default="">
 
             <label for="feat-name">Feat Name</label>
-            <input type="text" id="feat-name" name="feat-name" placeholder="This will be the displayed feat name." required>
+            <input type="text" id="feat-name" name="feat-name" placeholder="This will be the displayed feat name."
+                required>
 
             <label for="feat-level">Level</label>
             <input type="number" id="feat-level" name="feat-level" placeholder="Level of the feat." required>
@@ -128,7 +158,8 @@
 
             <label for="feat-textDescription">Description</label>
             <textarea id="feat-textDescription" name="feat-textDescription"
-                placeholder="Text displayed in the feat description. HTML tags will not be escaped." required></textarea>
+                placeholder="Text displayed in the feat description. HTML tags will not be escaped."
+                required></textarea>
 
             <label for="feat-traits">Traits</label>
             <input type="text" id="feat-traits" name="feat-traits"
@@ -149,7 +180,8 @@
     <div>
         <h2>How this tool works:</h2>
         <br>
-        This is nothing more than a JSON parser for Pathbuilder 2e. What this actually does is formatting every input value into a JSON format and lets you download the file.
+        This is nothing more than a JSON parser for Pathbuilder 2e. What this actually does is formatting every input
+        value into a JSON format and lets you download the file.
         <br>
         <br>
         Once downloaded, you can import it as a custom pack into the mobile version:
@@ -157,7 +189,8 @@
         Main Screen → App Options → Custom Packs → Import Custom Pack.
         <br>
         <br>
-        After importing, your custom feats will be available for any existing character and all future ones you create. To access them:
+        After importing, your custom feats will be available for any existing character and all future ones you create.
+        To access them:
         <ol>
             <li>Open a character.</li>
             <li>Tap the side menu in the upper-right corner.</li>
@@ -168,20 +201,23 @@
         <br>
         <br>
         <h2>How to use:</h2>
-        First you need to create a Custom Pack. Choose an ID and a Name, then click "Create Pack". 
+        First you need to create a Custom Pack. Choose an ID and a Name, then click "Create Pack".
         <br>
-        After that, you can add as many feats as you want, filling in all values except the Feat ID, which will auto-increment. Click Add Feat to include it in the pack.
+        After that, you can add as many feats as you want, filling in all values except the Feat ID, which will
+        auto-increment. Click Add Feat to include it in the pack.
         <br>
-        If you want to delete all your work, just click on Clear All. This will clear all form values, delete your pack and everything inside it.
+        If you want to delete all your work, just click on Clear All. This will clear all form values, delete your pack
+        and everything inside it.
     </div>
 
     <div>
-    <br>
-    <i>Disclaimer:</i>
-    <br>
-    <i>This project is currently a work in progress. Features and functionality may change over time, and each release is intended to improve and expand upon previous versions.</i>
+        <br>
+        <i>Disclaimer:</i>
+        <br>
+        <i>This project is currently a work in progress. Features and functionality may change over time, and each
+            release is intended to improve and expand upon previous versions.</i>
     </div>
-    
+
 </body>
 
 <script>
@@ -241,6 +277,7 @@
     clearButton.addEventListener('click', onClearClick);
 
     let customPack;
+    featId.value = "feat-1";
 
     function onClearClick() {
         let text = "This is gonna delete the pack created with all its content. You still wish to continue?"
@@ -266,6 +303,25 @@
         packStatus.innerHTML = `<span style="color: green">Current pack: ${customPack.customPackName}</span>`;
     }
 
+    function removeFeat(e) {
+        let text = "This will remove the feat from the current pack. You still wish to continue?"
+        if (confirm(text)) {
+            const removeId = e.target.id.slice(7);
+            if (customPack && customPack.feats.length) {
+                console.log(customPack.feats);
+                customPack.feats = customPack.feats.filter(f => f.id !== removeId);
+                console.log(customPack.feats);
+
+                const removedFeat = document.getElementById(`te-${removeId}`)
+                removedFeat.remove();
+            }
+        } else {
+            return;
+        }
+
+    }
+
+
     function onFeatFormSubmit(e) {
         e.preventDefault();
         if (!customPack) {
@@ -289,16 +345,18 @@
         featCounter++;
         featId.value = `feat-${featCounter}`;
         console.log(customPack);
-        table.insertAdjacentHTML('beforeend',`<tr>
-            <div class="table-element">
-                <div class="title">${customFeat.name}</div>
-                <div class="lvl">${customFeat.level}</div>
-                <div class="action">${customFeat.action}</div>
+        table.insertAdjacentHTML('beforeend', `<tr>
+            <div class="table-element" id="te-${customFeat.id}">
+                <div class="title">${customFeat.name}</div><span id="remove-${customFeat.id}" class="remove" onclick="removeFeat(event)">X</span>
+                <div class="lvl"><b>Level: </b>${customFeat.level}</div>
+                <div class="action"><b>Actions: </b>${customFeat.action}</div>
+                <div class="traits"><b>Traits: </b>${customFeat.traits}</div>
                 <div class="desc">${customFeat.textDescription}</div>
                 </div>
                 </tr>`)
-    }
 
+
+    }
 
     function onDownloadClick() {
         if (!customPack) {
