@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Feats Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            margin: 1rem;
+            font-size: 1.2rem;
+            /* bigger base font */
+            line-height: 1.6;
+            overflow-y: auto;
+            /* enable vertical scrolling */
+        }
+
+        fieldset {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #555;
+        }
+
+        legend {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            height: 50px;
+            margin-top: 0.4rem;
+            background-color: rgb(56, 56, 56);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.2rem;
+            /* larger text inside */
+        }
+
+        textarea {
+            min-height: 120px;
+            /* more room for typing */
+        }
+
+        button {
+            width: 100%;
+            padding: 1.2rem;
+            margin-top: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            background-color: #007bff;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .table-progress{
+            border: 1px solid;
+            width: 100%;
+            padding: 5px;
+            .table-element{
+                border-bottom: 1px solid;
+                padding: 5px;
+
+                .title{
+                    font-weight: 700;
+                }
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Create Custom Pack</h1>
+
+    <form id="packForm" class="form-class" style="display: flex;flex-direction: column;">
+        <!-- Top-level fields -->
+        <fieldset>
+            <legend>Custom Pack</legend>
+            <label for="customPackID">Custom Pack ID</label>
+            <input type="text" id="customPackID" name="customPackID"
+                placeholder="Id of the pack, mandatory. Can be any alfanumerical combination of characters."
+                required>
+
+            <label for="customPackName">Custom Pack Name</label>
+            <input type="text" id="customPackName" name="customPackName"
+                placeholder="Name of the pack, displayed when imported."
+                required>
+        </fieldset>
+        <div id="pack-status"></div>
+        <button type="submit">Create Pack</button>
+    </form>
+
+
+    <!-- Nested feat entry -->
+    <form id="featForm" class="form-class" style="display: flex;flex-direction: column;">
+        <fieldset>
+            <legend>Custom Feat</legend>
+
+            <label for="feat-id">Feat ID</label>
+            <input type="text" id="feat-id" name="feat-id" disabled value="feat-1">
+
+            <label for="feat-name">Feat Name</label>
+            <input type="text" id="feat-name" name="feat-name" placeholder="This will be the displayed feat name." required>
+
+            <label for="feat-level">Level</label>
+            <input type="number" id="feat-level" name="feat-level" placeholder="Level of the feat." required>
+
+            <label for="feat-action">Action</label>
+            <input type="number" id="feat-action" name="feat-action" placeholder="Action cost of the feat.">
+
+            <label for="feat-textDescription">Description</label>
+            <textarea id="feat-textDescription" name="feat-textDescription"
+                placeholder="Text displayed in the feat description. HTML tags will not be escaped." required></textarea>
+
+            <label for="feat-traits">Traits</label>
+            <input type="text" id="feat-traits" name="feat-traits"
+                placeholder="Traits of the feat, to be written with the first capital letter, separated by a comma.">
+        </fieldset>
+
+        <button type="submit">Add Feat</button>
+    </form>
+
+    <div>
+        <table id="progress" class="table-progress">
+
+        </table>
+    </div>
+    <button id="download">Download</button>
+    <button id="clear">Clear All</button>
+
+    <div>
+        <h2>How this tool works:</h2>
+        <br>
+        This is nothing more than a JSON parser for Pathbuilder 2e. What this actually does is formatting every input value into a JSON format and lets you download the file.
+        <br>
+        <br>
+        Once downloaded, you can import it as a custom pack into the mobile version:
+        <br>
+        Main Screen → App Options → Custom Packs → Import Custom Pack.
+        <br>
+        <br>
+        After importing, your custom feats will be available for any existing character and all future ones you create. To access them:
+        <ol>
+            <li>Open a character.</li>
+            <li>Tap the side menu in the upper-right corner.</li>
+            <li>Select Feat Browser.</li>
+            <li>Filter by Custom Feat in the header of the modal that appears.</li>
+            <li>Select the feat you want and click Add Free.</li>
+        </ol>
+        <br>
+        <br>
+        <h2>How to use:</h2>
+        First you need to create a Custom Pack. Choose an ID and a Name, then click "Create Pack". 
+        <br>
+        After that, you can add as many feats as you want, filling in all values except the Feat ID, which will auto-increment. Click Add Feat to include it in the pack.
+        <br>
+        If you want to delete all your work, just click on Clear All. This will clear all form values, delete your pack and everything inside it.
+    </div>
+
+    <div>
+    <br>
+    <i>Disclaimer:</i>
+    <br>
+    <i>This project is currently a work in progress. Features and functionality may change over time, and each release is intended to improve and expand upon previous versions.</i>
+    </div>
+    
+</body>
+
+<script>
+
+    const featId = document.getElementById("feat-id");
+    let featCounter = 1;
+
+    class Feat {
+        constructor(id, name, level, action, textDescription = "", traits = "", src = "Custom", databaseID = 1, timestamp = "1714881761873") {
+            this.id = id;
+            this.name = name;
+            this.level = parseInt(level);
+            this.action = parseInt(action);
+            this.textDescription = textDescription;
+            this.traits = `${traits}, 3rd Party`;
+            this.src = src;
+            this.databaseID = databaseID;
+            this.timestamp = timestamp;
+        }
+
+    }
+
+    class Pack {
+        constructor(customPackID, customPackName) {
+            this.customPackID = customPackID;
+            this.customPackName = customPackName;
+            this.feats = [];
+        }
+
+        addFeat(feat) {
+            this.feats.push(feat);
+        }
+
+        createJson() {
+            const jsonObject = {
+                "customPackID": this.customPackID,
+                "customPackName": this.customPackName,
+                "listCustomFeats": this.feats,
+            }
+
+            return jsonObject;
+        }
+    }
+
+    const packForm = document.getElementById('packForm');
+    const featForm = document.getElementById('featForm');
+    const downloadButton = document.getElementById('download');
+    const clearButton = document.getElementById('clear');
+    const table = document.getElementById('progress');
+
+    const packStatus = document.getElementById('pack-status');
+    packStatus.innerHTML = `<span style="color: red">No pack</span>`;
+
+    featForm.addEventListener('submit', onFeatFormSubmit);
+    packForm.addEventListener('submit', onPackFormSubmit);
+    downloadButton.addEventListener('click', onDownloadClick);
+    clearButton.addEventListener('click', onClearClick);
+
+    let customPack;
+
+    function onClearClick() {
+        let text = "This is gonna delete the pack created with all its content. You still wish to continue?"
+        if (confirm(text)) {
+            featCounter = 1;
+            customPack = null;
+            featForm.reset();
+            packForm.reset()
+            featId.value = `feat-${featCounter}`;
+            packStatus.innerHTML = `<span style="color: red">No pack</span>`;
+            table.innerHTML = "";
+        } else {
+            return
+        }
+    }
+
+    function onPackFormSubmit(e) {
+        e.preventDefault();
+        customPack = new Pack(
+            e.target.customPackID.value,
+            e.target.customPackName.value,
+        );
+        packStatus.innerHTML = `<span style="color: green">Current pack: ${customPack.customPackName}</span>`;
+    }
+
+    function onFeatFormSubmit(e) {
+        e.preventDefault();
+        if (!customPack) {
+            alert("Create a pack first");
+            return;
+        }
+
+        const customFeat = new Feat(
+            e.target["feat-id"].value,
+            e.target["feat-name"].value,
+            e.target["feat-level"].value,
+            e.target["feat-action"].value,
+            e.target["feat-textDescription"].value,
+            e.target["feat-traits"].value,
+            "Custom",
+            1,
+            "1714881761873",
+        )
+        console.log(customFeat);
+        customPack.addFeat(customFeat);
+        featCounter++;
+        featId.value = `feat-${featCounter}`;
+        console.log(customPack);
+        table.insertAdjacentHTML('beforeend',`<tr>
+            <div class="table-element">
+                <div class="title">${customFeat.name}</div>
+                <div class="lvl">${customFeat.level}</div>
+                <div class="action">${customFeat.action}</div>
+                <div class="desc">${customFeat.textDescription}</div>
+                </div>
+                </tr>`)
+    }
+
+
+    function onDownloadClick() {
+        if (!customPack) {
+            alert("No pack created!");
+            return;
+        }
+        else if (!customPack.feats.length) {
+            alert("Pack is empty! And all the devils are here.");
+            return;
+        }
+        console.log(customPack.createJson());
+        downloadJSON(customPack.createJson(), `${customPack.customPackName}.json`)
+    }
+
+    function downloadJSON(obj, filename = "pack.json") {
+        const jsonStr = JSON.stringify(obj);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+
+        URL.revokeObjectURL(url);
+    }
+
+</script>
+
+</html>
